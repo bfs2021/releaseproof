@@ -60,7 +60,7 @@ Compared field by field against the rebuilt package.json; key order never counts
 | `manifest-unreadable` | critical | The release's package.json is missing, not JSON, or not an object. |
 | `install-script-added` | critical | `preinstall`, `install` or `postinstall` exists in the release but not in the source. |
 | `install-script-changed` | critical | One of those scripts differs from the source. |
-| `lifecycle-script-added` / `-changed` | high | `prepare`, `prepublish`, `prepublishOnly`, `prepack`, `postpack`, `preprepare` or `postprepare` added or changed. |
+| `lifecycle-script-added` / `lifecycle-script-changed` | high | `prepare`, `prepublish`, `prepublishOnly`, `prepack`, `postpack`, `preprepare` or `postprepare` added or changed. |
 | `dependency-added` | high | A dependency (any of dependencies, optional, peer, bundled) the source does not have. |
 | `entry-point-changed` | high | `main`, `module`, `browser`, `exports`, `bin`, `types`, `typings` or `imports` differ. |
 | `rebuild-manifest-unreadable` | high | The rebuilt package.json could not be read, so nothing could be compared. |
