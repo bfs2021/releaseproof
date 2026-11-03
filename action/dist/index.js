@@ -64210,7 +64210,7 @@ function readTarball(bytes, limits = DEFAULT_TARBALL_LIMITS) {
     }
     entries.set(path13, { ...entry, path: path13 });
   }
-  return { prefix, entries, problems, totalBytes };
+  return { prefix, entries, problems, totalBytes, limitReached: stopped };
 }
 
 // ../packages/core/src/registry/auth.ts
@@ -74195,6 +74195,25 @@ function patches(changes) {
   }
   return out;
 }
+function isTarballEscapeProblem(problem) {
+  return problem.startsWith("absolute path ") || problem.startsWith("path traversal ") || problem.startsWith("symlink ") || problem.startsWith("hardlink ");
+}
+function tarballProblemDetail(release) {
+  const { problems } = release;
+  const explanations = [];
+  if (problems.some(isTarballEscapeProblem)) {
+    explanations.push(
+      "npm never produces links, absolute paths or traversal; these can escape the install directory when extracted."
+    );
+  }
+  if (release.limitReached) {
+    explanations.push(
+      "Reading stopped at a size limit, so the rest of the archive was not examined; an unusually large package, or an archive built to exhaust memory, trips it."
+    );
+  }
+  const head = problems.join("; ");
+  return explanations.length > 0 ? `${head}. ${explanations.join(" ")}` : `${head}.`;
+}
 function fileRules(context4) {
   const findings = [];
   const { release, diff } = context4;
@@ -74203,7 +74222,7 @@ function fileRules(context4) {
       id: "tarball-problem",
       severity: "critical",
       title: "the release tarball has suspicious entries",
-      detail: `${release.problems.join("; ")}. npm never produces links, absolute paths or traversal; these can escape the install directory when extracted.`,
+      detail: tarballProblemDetail(release),
       evidence: { problems: release.problems }
     });
   }

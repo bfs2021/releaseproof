@@ -41,6 +41,11 @@ export interface TarballContents {
   problems: string[];
   /** Unpacked size of all entries that were read. */
   totalBytes: number;
+  /**
+   * True when reading stopped at `maxEntries` or `maxTotalBytes`. A flag rather than a
+   * match on `problems`, whose texts can contain entry paths chosen by the archive's author.
+   */
+  limitReached: boolean;
 }
 
 function kindOf(type: string): EntryKind {
@@ -192,5 +197,5 @@ export function readTarball(
     }
     entries.set(path, { ...entry, path });
   }
-  return { prefix, entries, problems, totalBytes };
+  return { prefix, entries, problems, totalBytes, limitReached: stopped };
 }

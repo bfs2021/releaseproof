@@ -118,39 +118,81 @@ describe("file rules on crafted tarballs", () => {
     expect(findings.find((f) => f.id === "tarball-problem")?.severity).toBe("critical");
   });
 
-  it("explains size-limit tarball problems without the link/traversal sentence (#43)", () => {
-    const many = rawTar(
-      Array.from({ length: 5 }, (_, i) => ({
-        path: `package/f${i}.js`,
-        content: "x",
-      })),
-    );
-    const release = readTarball(many, {
-      maxEntries: 3,
-      maxTotalBytes: 512 * 1024 * 1024,
-      maxFileBytesInMemory: 1024,
-    });
-    const finding = runRules(ruleContext(release, undefined)).find(
+  const ESCAPE = "npm never produces links, absolute paths or traversal";
+  const LIMIT = "Reading stopped at a size limit, so the rest of the archive was not examined";
+  const tarballDetail = (bytes: Buffer, limits?: Parameters<typeof readTarball>[1]) =>
+    runRules(ruleContext(readTarball(bytes, limits), undefined)).find(
       (f) => f.id === "tarball-problem",
-    );
-    expect(finding?.severity).toBe("critical");
-    expect(finding?.detail).toMatch(/stopped reading/);
-    expect(finding?.detail).toMatch(/20 000 entries|512 MiB|exhaust memory/i);
-    expect(finding?.detail).not.toMatch(/links, absolute paths or traversal/);
+    )?.detail;
+  const files = (count: number, content = "x") =>
+    Array.from({ length: count }, (_, i) => ({ path: `package/f${i}.js`, content }));
+  const limits = {
+    maxEntries: 20_000,
+    maxTotalBytes: 512 * 1024 * 1024,
+    maxFileBytesInMemory: 1024,
+  };
+
+  it("explains an entry-count limit without the link/traversal sentence", () => {
+    const detail = tarballDetail(rawTar(files(5)), { ...limits, maxEntries: 3 });
+    expect(detail).toContain("more than 3 entries; stopped reading");
+    expect(detail).toContain(LIMIT);
+    expect(detail).not.toContain(ESCAPE);
   });
 
-  it("keeps the link/traversal sentence when the archive has an escape problem", () => {
-    const release = readTarball(
+  it("explains an unpacked-size limit the same way", () => {
+    const detail = tarballDetail(rawTar(files(3, "y".repeat(100))), {
+      ...limits,
+      maxTotalBytes: 150,
+    });
+    expect(detail).toContain("unpacked size exceeds 150 bytes; stopped reading");
+    expect(detail).toContain(LIMIT);
+    expect(detail).not.toContain(ESCAPE);
+  });
+
+  it("keeps the link/traversal sentence for an escape problem", () => {
+    const detail = tarballDetail(
       rawTar([
         { path: "package/package.json", content: "{}" },
         { path: "package/evil", type: "SymbolicLink", linkpath: "/etc/passwd" },
       ]),
     );
-    const finding = runRules(ruleContext(release, undefined)).find(
-      (f) => f.id === "tarball-problem",
+    expect(detail).toContain(ESCAPE);
+    expect(detail).not.toContain(LIMIT);
+  });
+
+  it("gives both explanations when both kinds of problem occur", () => {
+    const detail = tarballDetail(
+      rawTar([
+        { path: "package/evil", type: "SymbolicLink", linkpath: "/etc/passwd" },
+        ...files(5),
+      ]),
+      { ...limits, maxEntries: 3 },
     );
-    expect(finding?.detail).toMatch(/links, absolute paths or traversal/);
-    expect(finding?.detail).not.toMatch(/exhaust memory/);
+    expect(detail).toContain(ESCAPE);
+    expect(detail).toContain(LIMIT);
+  });
+
+  it("adds no explanation for problems of neither kind", () => {
+    const detail = tarballDetail(
+      rawTar([
+        { path: "package/a.js", content: "1" },
+        { path: "other/b.js", content: "2" },
+      ]),
+    );
+    expect(detail).toBeDefined();
+    expect(detail).not.toContain(ESCAPE);
+    expect(detail).not.toContain(LIMIT);
+  });
+
+  it("is not fooled by an entry whose name looks like a limit message", () => {
+    const detail = tarballDetail(
+      rawTar([
+        { path: "package/package.json", content: "{}" },
+        { path: "package/x; stopped reading", type: "SymbolicLink", linkpath: "y" },
+      ]),
+    );
+    expect(detail).toContain(ESCAPE);
+    expect(detail).not.toContain(LIMIT);
   });
 
   it("labels whitespace-only changes low and binary additions high", () => {

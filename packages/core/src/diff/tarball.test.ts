@@ -100,6 +100,7 @@ describe("readTarball", () => {
     });
     expect(limited.entries.size).toBe(3);
     expect(limited.problems).toEqual(["more than 3 entries; stopped reading"]);
+    expect(limited.limitReached).toBe(true);
 
     const big = rawTar([
       { path: "package/a.bin", content: Buffer.alloc(600) },
@@ -112,6 +113,11 @@ describe("readTarball", () => {
     });
     expect([...sized.entries.keys()]).toEqual(["a.bin"]);
     expect(sized.problems).toEqual(["unpacked size exceeds 1000 bytes; stopped reading"]);
+    expect(sized.limitReached).toBe(true);
+
+    // Under the limits nothing stops, whatever the entries are called.
+    const named = readTarball(rawTar([{ path: "package/x; stopped reading", content: "x" }]));
+    expect(named.limitReached).toBe(false);
   });
 
   it("hashes but does not keep files above the in-memory limit", () => {
