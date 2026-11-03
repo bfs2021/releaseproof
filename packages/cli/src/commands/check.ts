@@ -55,6 +55,12 @@ export async function runCheckCommand(
   io: CommandIo,
   deps: CheckCommandDeps = { runCheck },
 ): Promise<ExitCode> {
+  if (options.token !== undefined && !options.quiet) {
+    // Never echo the token itself.
+    io.stderr(
+      "warning: --token is visible in shell history and process lists; prefer NPM_TOKEN or npm login\n",
+    );
+  }
   try {
     const report = await deps.runCheck({
       spec,

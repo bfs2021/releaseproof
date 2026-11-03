@@ -97,6 +97,36 @@ describe("runCheckCommand", () => {
   });
 });
 
+describe("runCheckCommand with --token", () => {
+  const warning =
+    "warning: --token is visible in shell history and process lists; prefer NPM_TOKEN or npm login\n";
+
+  it("warns on stderr without printing the token, and still passes it on", async () => {
+    const runCheck = vi.fn(async (_options: CheckOptions) => fakeReport(0));
+    const { out, err, io: streams } = io();
+    const code = await runCheckCommand("x@1.0.0", { token: "npm_secret123" }, streams, {
+      runCheck,
+    });
+    expect(code).toBe(0);
+    expect(err[0]).toBe(warning);
+    expect([...err, ...out].join("")).not.toContain("npm_secret123");
+    expect(runCheck.mock.calls[0]?.[0]).toMatchObject({ token: "npm_secret123" });
+  });
+
+  it("says nothing without --token, and nothing with --quiet", async () => {
+    const runCheck = vi.fn(async () => fakeReport(0));
+    const without = io();
+    await runCheckCommand("x@1.0.0", {}, without.io, { runCheck });
+    expect(without.err).not.toContain(warning);
+
+    const quiet = io();
+    await runCheckCommand("x@1.0.0", { token: "npm_secret123", quiet: true }, quiet.io, {
+      runCheck,
+    });
+    expect(quiet.err).toEqual([]);
+  });
+});
+
 describe("runCheckCommand with --stage", () => {
   it("passes the stage id through and allows the package argument to be absent", async () => {
     const runCheck = vi.fn(async (_options: CheckOptions) => fakeReport(2));
