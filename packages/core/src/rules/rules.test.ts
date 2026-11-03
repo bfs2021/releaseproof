@@ -118,6 +118,41 @@ describe("file rules on crafted tarballs", () => {
     expect(findings.find((f) => f.id === "tarball-problem")?.severity).toBe("critical");
   });
 
+  it("explains size-limit tarball problems without the link/traversal sentence (#43)", () => {
+    const many = rawTar(
+      Array.from({ length: 5 }, (_, i) => ({
+        path: `package/f${i}.js`,
+        content: "x",
+      })),
+    );
+    const release = readTarball(many, {
+      maxEntries: 3,
+      maxTotalBytes: 512 * 1024 * 1024,
+      maxFileBytesInMemory: 1024,
+    });
+    const finding = runRules(ruleContext(release, undefined)).find(
+      (f) => f.id === "tarball-problem",
+    );
+    expect(finding?.severity).toBe("critical");
+    expect(finding?.detail).toMatch(/stopped reading/);
+    expect(finding?.detail).toMatch(/20 000 entries|512 MiB|exhaust memory/i);
+    expect(finding?.detail).not.toMatch(/links, absolute paths or traversal/);
+  });
+
+  it("keeps the link/traversal sentence when the archive has an escape problem", () => {
+    const release = readTarball(
+      rawTar([
+        { path: "package/package.json", content: "{}" },
+        { path: "package/evil", type: "SymbolicLink", linkpath: "/etc/passwd" },
+      ]),
+    );
+    const finding = runRules(ruleContext(release, undefined)).find(
+      (f) => f.id === "tarball-problem",
+    );
+    expect(finding?.detail).toMatch(/links, absolute paths or traversal/);
+    expect(finding?.detail).not.toMatch(/exhaust memory/);
+  });
+
   it("labels whitespace-only changes low and binary additions high", () => {
     const release = clean([
       { path: "package.json", content: "{}" },

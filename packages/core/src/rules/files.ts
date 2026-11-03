@@ -69,6 +69,38 @@ function patches(changes: FileChange[]): Record<string, string> {
   return out;
 }
 
+/** Size-limit messages from `readTarball` when it stops early (#43). */
+function isTarballLimitProblem(problem: string): boolean {
+  return problem.includes("stopped reading");
+}
+
+/** Link / absolute / `..` problems that can escape the install directory. */
+function isTarballEscapeProblem(problem: string): boolean {
+  return (
+    problem.startsWith("absolute path ") ||
+    problem.startsWith("path traversal ") ||
+    problem.startsWith("symlink ") ||
+    problem.startsWith("hardlink ")
+  );
+}
+
+/** Explain `tarball-problem` from the kinds of problems present, not a single canned sentence. */
+export function tarballProblemDetail(problems: string[]): string {
+  const explanations: string[] = [];
+  if (problems.some(isTarballEscapeProblem)) {
+    explanations.push(
+      "npm never produces links, absolute paths or traversal; these can escape the install directory when extracted.",
+    );
+  }
+  if (problems.some(isTarballLimitProblem)) {
+    explanations.push(
+      "Reading stops at 20 000 entries or 512 MiB unpacked; an unusually large package, or an archive built to exhaust memory, trips those limits.",
+    );
+  }
+  const head = problems.join("; ");
+  return explanations.length > 0 ? `${head}. ${explanations.join(" ")}` : `${head}.`;
+}
+
 /** Findings about the files in the tarball and how they differ from the rebuild. */
 export function fileRules(context: RuleContext): Finding[] {
   const findings: Finding[] = [];
@@ -79,7 +111,7 @@ export function fileRules(context: RuleContext): Finding[] {
       id: "tarball-problem",
       severity: "critical",
       title: "the release tarball has suspicious entries",
-      detail: `${release.problems.join("; ")}. npm never produces links, absolute paths or traversal; these can escape the install directory when extracted.`,
+      detail: tarballProblemDetail(release.problems),
       evidence: { problems: release.problems },
     });
   }
