@@ -1,3 +1,4 @@
+import { ExitCode } from "@releaseproof/core";
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { type CheckCommandOptions, runCheckCommand } from "./commands/check.js";
@@ -35,6 +36,14 @@ export function createProgram(): Command {
     .option("--keep-volume", "keep the Docker volume after the run, for debugging")
     .option("--json", "print the full report as JSON")
     .option("--quiet", "no progress output on stderr")
+    .addHelpText(
+      "after",
+      `
+Exit codes:
+  ${ExitCode.Match}  MATCHES SOURCE: rebuilt from the source and identical, nothing high or critical
+  ${ExitCode.Differs}  DIFFERS FROM SOURCE: look at the findings before you approve
+  ${ExitCode.ToolError}  COULD NOT VERIFY, or a tool error; never read this as "safe"`,
+    )
     .action(async (spec: string | undefined, options: CheckCommandOptions) => {
       process.exitCode = await runCheckCommand(spec, options, {
         stdout: (text) => process.stdout.write(text),

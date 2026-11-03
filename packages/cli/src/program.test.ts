@@ -22,6 +22,16 @@ describe("releaseproof CLI", () => {
     expect(exitCode).toBe(0);
   });
 
+  it("lists the exit codes in check --help", () => {
+    const check = createProgram().commands.find((command) => command.name() === "check");
+    let output = "";
+    check?.configureOutput({ writeOut: (s) => (output += s) }).outputHelp();
+    expect(output).toContain("Exit codes:");
+    expect(output).toMatch(/^ {2}0 {2}MATCHES SOURCE/m);
+    expect(output).toMatch(/^ {2}1 {2}DIFFERS FROM SOURCE/m);
+    expect(output).toMatch(/^ {2}2 {2}COULD NOT VERIFY, or a tool error/m);
+  });
+
   it("documents --no-rekor in check --help", () => {
     const check = createProgram().commands.find((command) => command.name() === "check");
     expect(check?.helpInformation()).toContain("--no-rekor");
