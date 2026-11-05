@@ -1,0 +1,34 @@
+name: Claim issues
+
+# Assigns an unassigned issue to a contributor who asks to work on it in a comment
+# ("/assign", "/take", "Can I work on this?") and releases it on "/unassign". The logic and
+# its tests are in .github/scripts/claim-issue.mjs. The comment is only pattern-matched by
+# that script (read from the event file, never interpolated into a shell); the job needs
+# nothing but issues: write.
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+concurrency:
+  group: claim-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  claim:
+    if: ${{ !github.event.issue.pull_request && github.event.issue.state == 'open' && github.event.comment.user.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Assign or release the issue
+        run: node .github/scripts/claim-issue.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

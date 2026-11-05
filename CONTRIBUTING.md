@@ -50,9 +50,11 @@ Docker flags or the planner need a unit test and, when they affect real packages
   are small, self-contained and name the files to touch and the tests to add.
 - [help wanted](https://github.com/ujjwalv01/releaseproof/labels/help%20wanted) issues are
   bigger and need Docker and some reading of `docs/design-rebuild.md`.
-- Comment on the issue before starting so two people do not do the same work. If you want
-  to change something that has no issue yet, open one first and describe the change; for
-  anything security-relevant, read SECURITY.md.
+- Claim an issue before starting so two people do not do the same work: comment `/assign`
+  (or just "I'd like to work on this") on an open, unassigned issue and it is assigned to you
+  automatically. Comment `/unassign` to give it back. If you want to change something that
+  has no issue yet, open one first and describe the change; for anything security-relevant,
+  read SECURITY.md.
 
 ## Pull requests, step by step
 
