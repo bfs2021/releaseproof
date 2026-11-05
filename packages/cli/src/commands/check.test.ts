@@ -95,6 +95,26 @@ describe("runCheckCommand", () => {
     expect(await runCheckCommand("x@1.0.0", { node: "twenty" }, streams, { runCheck })).toBe(2);
     expect(err[1]).toMatch(/--node expects a Node.js major version/);
   });
+
+  it("with --json a ToolError prints one error object to stdout and keeps the stderr line", async () => {
+    const runCheck = vi.fn(async () => {
+      throw new ToolError("Docker is not available");
+    });
+    const { out, err, io: streams } = io();
+    expect(await runCheckCommand("x@1.0.0", { json: true }, streams, { runCheck })).toBe(2);
+    expect(err).toEqual(["error: Docker is not available\n"]);
+    expect(JSON.parse(out.join(""))).toEqual({ error: { message: "Docker is not available" } });
+  });
+
+  it("without --json a ToolError leaves stdout empty", async () => {
+    const runCheck = vi.fn(async () => {
+      throw new ToolError("Docker is not available");
+    });
+    const { out, err, io: streams } = io();
+    expect(await runCheckCommand("x@1.0.0", {}, streams, { runCheck })).toBe(2);
+    expect(out).toEqual([]);
+    expect(err).toEqual(["error: Docker is not available\n"]);
+  });
 });
 
 describe("runCheckCommand with --token", () => {
