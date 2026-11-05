@@ -1,5 +1,19 @@
 # releaseproof
 
+## 0.2.2
+
+### Patch Changes
+
+- [#69](https://github.com/ujjwalv01/releaseproof/pull/69) [`ba42309`](https://github.com/ujjwalv01/releaseproof/commit/ba423099f21d790670a6eb71cc361d598e3c2db6) Thanks [@Doomguy-BFG9000](https://github.com/Doomguy-BFG9000)! - Recognize GitHub repository URLs with uppercase schemes and hosts when comparing provenance repositories.
+
+- [#70](https://github.com/ujjwalv01/releaseproof/pull/70) [`9730117`](https://github.com/ujjwalv01/releaseproof/commit/97301179638b9fa667616d46be94f34e1d83447a) Thanks [@Doomguy-BFG9000](https://github.com/Doomguy-BFG9000)! - Explain how to obtain a full commit SHA when a short hexadecimal commit is supplied,
+  without resolving or accepting abbreviated commits automatically.
+
+- [#75](https://github.com/ujjwalv01/releaseproof/pull/75) [`ed376c5`](https://github.com/ujjwalv01/releaseproof/commit/ed376c58d2e686118010f111e51fab73fd3200eb) Thanks [@Doomguy-BFG9000](https://github.com/Doomguy-BFG9000)! - Report malformed clone-stage inspection paths containing NUL as an inspection
+  failure before invoking rebuild commands.
+
+- [#51](https://github.com/ujjwalv01/releaseproof/pull/51) [`abc66ed`](https://github.com/ujjwalv01/releaseproof/commit/abc66edd0d5d8cf7a51d65c4f8ec86e5f97d783e) Thanks [@ShahadatTest](https://github.com/ShahadatTest)! - `tarball-problem`: a release tarball that was cut off at the entry or size limit is no longer explained as links or path traversal. The detail now says which kind of problem was found.
+
 ## 0.2.1
 
 ### Patch Changes
