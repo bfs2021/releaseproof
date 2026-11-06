@@ -190,3 +190,30 @@ describe("runCheckCommand with --stage", () => {
     });
   });
 });
+
+describe("runCheckCommand with --repo", () => {
+  // The real core runCheck rejects these before fetching anything, so the default
+  // deps keep the test offline and prove the exit code end to end.
+  it.each(["github.com/o/r", "nope"])(
+    "rejects %j with exit code 2 before any fetch",
+    async (repo) => {
+      const streams = io();
+      const code = await runCheckCommand("x@1.0.0", { repo }, streams.io);
+      expect(code).toBe(2);
+      expect(streams.out).toEqual([]);
+      expect(streams.err).toEqual([
+        `error: --repo must be a GitHub repository such as https://github.com/owner/repo or owner/repo, got ${JSON.stringify(repo)}\n`,
+      ]);
+    },
+  );
+
+  it("passes a readable --repo through unchanged", async () => {
+    const runCheck = vi.fn(async (_options: CheckOptions) => fakeReport(0));
+    expect(
+      await runCheckCommand("x@1.0.0", { repo: "git+https://github.com/o/r.git" }, io().io, {
+        runCheck,
+      }),
+    ).toBe(0);
+    expect(runCheck.mock.calls[0]?.[0].repository).toBe("git+https://github.com/o/r.git");
+  });
+});

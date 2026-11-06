@@ -75081,6 +75081,11 @@ async function provenanceFromRekor(artifact, provenance, options, deps, log) {
   }
 }
 async function runCheck(options, deps = defaultDeps) {
+  if (options.repository !== void 0 && normalizeGithubRepository(options.repository) === void 0) {
+    throw new ToolError(
+      `--repo must be a GitHub repository such as https://github.com/owner/repo or owner/repo, got "${options.repository}"`
+    );
+  }
   const started = Date.now();
   const log = options.log ?? (() => {
   });
